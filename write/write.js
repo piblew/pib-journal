@@ -11,13 +11,6 @@ const message = document.getElementById("message");
 // Set the password here (change this to your desired password)
 const CORRECT_PASSWORD = "password123";
 
-// Check if already authenticated
-document.addEventListener("DOMContentLoaded", () => {
-  if (sessionStorage.getItem("authenticated") === "true") {
-    showEntrySection();
-  }
-});
-
 // Handle password submission
 submitPasswordBtn.addEventListener("click", () => {
   const enteredPassword = passwordInput.value.trim();
