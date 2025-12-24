@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login - Pib Journal</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/config.js"></script>
+  <script defer src="assets/scripts.js"></script>
+</head>
+<body>
+  <main>
+    <h1>Sign in</h1>
+    <form id="login-form">
+      <label>
+        Username
+        <input name="username" required />
+      </label>
+      <label>
+        Password
+        <input name="password" type="password" required />
+      </label>
+      <button type="submit">Sign in</button>
+    </form>
+
+    <p>
+      After signing in you'll be able to <a href="new-entry.html">create an entry</a>.
+    </p>
+    <div id="login-result"></div>
+  </main>
+</body>
+</html>
