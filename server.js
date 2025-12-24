@@ -38,12 +38,14 @@ const INDEX_FILENAME = 'pib_journal_index.json';
 function authMiddleware(req, res, next) {
   const h = req.headers.authorization || '';
   if (!h.startsWith('Bearer ')) return res.status(401).send('Missing token');
+  
   const token = h.slice(7);
   try {
     const payload = jwt.verify(token, JWT_SECRET);
     req.user = payload;
     next();
   } catch (err) {
+    console.error('Token verification failed:', err);
     return res.status(401).send('Invalid token');
   }
 }
@@ -87,35 +89,38 @@ async function filessDownloadFile(fileIdOrUrl) {
 // ===== Index read/write =====
 async function readIndex() {
   try {
-    // Preferred: use a fixed index ID (set FILESS_INDEX_ID in Render env) for faster, reliable reads.
     if (FILESS_INDEX_ID) {
       const url = FILESS_INDEX_ID.startsWith('http') ? FILESS_INDEX_ID : `${FILESS_API_BASE}/files/${FILESS_INDEX_ID}`;
       const res = await fetch(url, { headers: { 'Authorization': `Bearer ${FILESS_API_KEY}` } });
+
       if (!res.ok) {
-        console.error('readIndex: failed to fetch index by FILESS_INDEX_ID', res.status);
+        console.error(`Failed to fetch index by FILESS_INDEX_ID: ${res.status} - ${await res.text()}`);
         return [];
       }
       const body = await res.text();
       return JSON.parse(body);
     }
 
-    // Fallback: search files by name (existing behavior)
     const res = await fetch(`${FILESS_API_BASE}/files?name=${encodeURIComponent(INDEX_FILENAME)}`, {
       headers: { 'Authorization': `Bearer ${FILESS_API_KEY}` }
     });
+
     if (!res.ok) {
-      // No index found
+      console.error(`Failed to fetch index by name: ${res.status} - ${await res.text()}`);
       return [];
     }
-    const files = await res.json(); // adapt to filess response
-    if (!Array.isArray(files) || files.length === 0) return [];
 
-    // assume first match
+    const files = await res.json();
+    if (!Array.isArray(files) || files.length === 0) {
+      console.log('No index file found');
+      return [];
+    }
+
     const fileMeta = files[0];
     const body = await filessDownloadFile(fileMeta.url || fileMeta.id);
     return JSON.parse(body);
   } catch (err) {
-    console.error('readIndex error', err);
+    console.error('Error reading index file:', err);
     return [];
   }
 }
@@ -123,14 +128,14 @@ async function readIndex() {
 async function writeIndex(entries) {
   const content = JSON.stringify(entries, null, 2);
   const filename = `${INDEX_FILENAME}`;
-  const res = await filessUploadFile(filename, content);
-  // res should contain url/id; log it so you can copy it into FILESS_INDEX_ID on Render for faster reads.
   try {
+    const res = await filessUploadFile(filename, content);
     const indexIdOrUrl = res.id || res.url || JSON.stringify(res);
     console.log('INDEX UPLOAD RESULT:', indexIdOrUrl);
     console.log('If running on Render, set FILESS_INDEX_ID to this value to speed up index reads.');
   } catch (e) {
-    console.log('writeIndex: unable to parse upload result', e);
+    console.error('Error during index file upload:', e);
+    throw new Error('Failed to upload index');
   }
   return res;
 }
