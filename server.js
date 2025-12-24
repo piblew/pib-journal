@@ -56,15 +56,12 @@ function authMiddleware(req, res, next) {
 // If filess.io has different endpoints, modify these functions accordingly.
 
 async function filessUploadFile(filename, content) {
-  // Upload a file and return an object { id, url } or throw
-  // Using a generic /upload endpoint - replace with actual filess.io endpoint if necessary.
-  const url = `${FILESS_API_BASE}/upload`;
+  const url = `${FILESS_API_BASE}/v1/upload`;  // Use the correct endpoint URL
   const FormData = (await import('form-data')).default;
   const form = new FormData();
   form.append('file', Buffer.from(content), { filename });
 
   const headers = { 'Authorization': `Bearer ${FILESS_API_KEY}` };
-  // form.getHeaders() is necessary for multipart boundary in some runtimes
   Object.assign(headers, form.getHeaders ? form.getHeaders() : {});
 
   const res = await fetch(url, {
@@ -75,8 +72,9 @@ async function filessUploadFile(filename, content) {
   if (!res.ok) {
     throw new Error(`filess upload failed: ${res.status} ${await res.text()}`);
   }
-  return res.json(); // expecting { id, url } or similar
+  return res.json();
 }
+
 
 async function filessDownloadFile(fileIdOrUrl) {
   // If fileIdOrUrl is a full URL, fetch it; otherwise call download endpoint.
